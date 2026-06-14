@@ -10,8 +10,9 @@ import {
   Lock, Key, Fingerprint, Languages, Palette, Volume2, Wifi,
   MessageCircle, BookOpen, AlertTriangle, Info
 } from "lucide-react"
-import { signOut } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { signOut, updateProfile } from "firebase/auth"
+import { doc, setDoc } from "firebase/firestore"
+import { auth, db } from "@/lib/firebase"
 import { useAuth } from "@/components/AuthProvider"
 import { GOLD, GOLD_DIM, BG_CARD, BORDER } from "@/lib/theme"
 
@@ -47,9 +48,31 @@ export default function ProfileMenu({ open, onClose, accountName, accountNumber,
   const [haptics, setHaptics]   = useState(true)
   const [sounds, setSounds]     = useState(false)
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Sarah Z."
-  const email       = user?.email || "sarah.zahaf@email.com"
+  // Nom modifiable (init depuis Firebase, éditable par l'utilisateur)
+  const [nameValue, setNameValue]   = useState("")
+  const [editingName, setEditingName] = useState(false)
+  const [draftName, setDraftName]   = useState("")
+  const [savingName, setSavingName] = useState(false)
+
+  const displayName = nameValue || user?.displayName || user?.email?.split("@")[0] || "Utilisateur"
+  const email       = user?.email || ""
   const initials    = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+
+  async function saveName() {
+    const clean = draftName.trim()
+    if (!clean || !auth.currentUser) { setEditingName(false); return }
+    setSavingName(true)
+    try {
+      await updateProfile(auth.currentUser, { displayName: clean })
+      await setDoc(doc(db, "users", auth.currentUser.uid), { name: clean }, { merge: true })
+      setNameValue(clean)
+      setEditingName(false)
+    } catch (e) {
+      console.error("Erreur sauvegarde nom:", e)
+    } finally {
+      setSavingName(false)
+    }
+  }
 
   const fakeIban = "FR76 3000 4000 0300 0000 0000 123"
 
@@ -206,7 +229,34 @@ export default function ProfileMenu({ open, onClose, accountName, accountNumber,
                   initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
                   <SubHeader title="Informations personnelles" onBack={() => setScreen("main")} onClose={onClose} />
                   <div className="px-4 py-4 space-y-3">
-                    <InfoCard label="Prénom & Nom"   value="Sarah Zahaf" />
+                    {/* Nom modifiable */}
+                    <div className="rounded-2xl px-4 py-3" style={{ background: BG_CARD, border: `1px solid ${BORDER}` }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.3)" }}>Prénom & Nom</p>
+                        {!editingName && (
+                          <button onClick={() => { setDraftName(displayName); setEditingName(true) }}
+                            className="text-[11px] font-semibold" style={{ color: GOLD }}>
+                            Modifier
+                          </button>
+                        )}
+                      </div>
+                      {editingName ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <input autoFocus value={draftName} onChange={e => setDraftName(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") saveName() }}
+                            placeholder="Ton nom complet"
+                            className="flex-1 rounded-xl px-3 py-2 text-sm text-white outline-none"
+                            style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${GOLD}44` }} />
+                          <button onClick={saveName} disabled={savingName || !draftName.trim()}
+                            className="px-3 py-2 rounded-xl text-xs font-bold disabled:opacity-40"
+                            style={{ background: GOLD, color: "#050A14" }}>
+                            {savingName ? "..." : "OK"}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-white">{displayName}</p>
+                      )}
+                    </div>
                     <InfoCard label="Email"           value={email} />
                     <InfoCard label="Téléphone"       value="+33 6 •• •• •• ••" masked />
                     <InfoCard label="Date de naissance" value="•• / •• / ••••" masked />

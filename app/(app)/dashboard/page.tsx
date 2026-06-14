@@ -41,6 +41,9 @@ function formatMonth(ym: string) {
 export default function Dashboard() {
   const router = useRouter()
   const { user } = useAuth()
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "toi"
+  const firstName   = displayName.split(" ")[0]
+  const initials    = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
   const [bubbleOpen, setBubbleOpen]   = useState(false)
   const [monthOpen, setMonthOpen]     = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -147,12 +150,12 @@ export default function Dashboard() {
           <motion.button whileTap={{ scale: 0.92 }} onClick={() => setProfileOpen(true)}
             className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 relative"
             style={{ background: `linear-gradient(135deg, ${GOLD}, ${GOLD_DIM})`, color: "#050A14" }}>
-            SZ
+            {initials}
             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#050A14]"
               style={{ background: "#22c55e" }} />
           </motion.button>
           <div>
-            <p className="text-white font-semibold text-sm leading-tight">Bonjour, Sarah 👋</p>
+            <p className="text-white font-semibold text-sm leading-tight">Bonjour, {firstName} 👋</p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.38)" }}>Tableau de bord</p>
           </div>
         </motion.div>

@@ -4,10 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Eye, EyeOff, Lock, Mail, Check, ArrowRight, ArrowLeft } from "lucide-react"
-import { createUserWithEmailAndPassword } from "firebase/auth"
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
 import { GOLD, GOLD_DIM } from "@/lib/theme"
+import { User as UserIcon } from "lucide-react"
 
 const REASONS = [
   { id: "budget",   label: "Gérer mon budget",        icon: "💰" },
@@ -21,6 +22,7 @@ const REASONS = [
 export default function SignupPage() {
   const router = useRouter()
   const [step, setStep]                   = useState(1)
+  const [name, setName]                   = useState("")
   const [email, setEmail]                 = useState("")
   const [password, setPassword]           = useState("")
   const [showPwd, setShowPwd]             = useState(false)
@@ -39,9 +41,14 @@ export default function SignupPage() {
     setError(null)
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password)
+      const cleanName = name.trim()
+      if (cleanName) {
+        await updateProfile(cred.user, { displayName: cleanName })
+      }
       await setDoc(doc(db, "users", cred.user.uid), {
         uid: cred.user.uid,
         email: cred.user.email,
+        name: cleanName,
         createdAt: new Date(),
         onboardingReasons: selected,
       })
@@ -106,6 +113,18 @@ export default function SignupPage() {
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
               className="space-y-4">
 
+              {/* Nom */}
+              <div>
+                <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(255,255,255,0.5)" }}>Nom complet</label>
+                <div className="relative">
+                  <UserIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.3)" }} />
+                  <input type="text" value={name} onChange={e => setName(e.target.value)}
+                    placeholder="Ex : Sarah Zahaf"
+                    className="w-full rounded-xl py-3 pl-10 pr-4 text-sm text-white outline-none"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }} />
+                </div>
+              </div>
+
               {/* Email */}
               <div>
                 <label className="text-xs font-semibold mb-1.5 block" style={{ color: "rgba(255,255,255,0.5)" }}>Email</label>
@@ -145,7 +164,7 @@ export default function SignupPage() {
               </div>
 
               <motion.button whileTap={{ scale: 0.97 }}
-                disabled={!email || !isSecure}
+                disabled={!name.trim() || !email || !isSecure}
                 onClick={() => setStep(2)}
                 className="w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 mt-2 disabled:opacity-40"
                 style={{ background: `linear-gradient(135deg, ${GOLD}, ${GOLD_DIM})`, color: "#050A14" }}>
