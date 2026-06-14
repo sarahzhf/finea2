@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, Zap, Image as ImageIcon, CheckCircle2, UploadCloud } from "lucide-react"
 import { GOLD, GOLD_DIM, GREEN } from "@/lib/theme"
+import { useAuth } from "@/components/AuthProvider"
 
 interface ReceiptItem { description: string; quantity?: string; price?: string }
 interface ReceiptData {
@@ -20,6 +21,7 @@ type ScanState = "idle" | "scanning" | "done" | "error"
 
 export default function Scanner() {
   const router = useRouter()
+  const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [scanState, setScanState] = useState<ScanState>("idle")
@@ -92,11 +94,12 @@ export default function Scanner() {
       const res = await fetch("/api/scanner/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ receiptData }),
+        body: JSON.stringify({ receiptData, userId: user?.uid ?? "" }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || "Erreur sauvegarde")
       setSavedOk(true)
+      window.dispatchEvent(new Event("transactions-updated"))
       setTimeout(() => router.push("/dashboard"), 2000)
     } catch (e: unknown) {
       setErrorMsg(e instanceof Error ? e.message : "Erreur sauvegarde")

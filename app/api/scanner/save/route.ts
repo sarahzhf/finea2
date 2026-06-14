@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
@@ -18,28 +18,48 @@ function getDb() {
   return getFirestore(app);
 }
 
+// Convertit "JJ/MM/AAAA" → "AAAA-MM-JJ" (format attendu par le dashboard)
+function normalizeDate(raw?: string | null): string {
+  const today = new Date().toISOString().split("T")[0];
+  if (!raw) return today;
+  const m = String(raw).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    const y = m[3].length === 2 ? "20" + m[3] : m[3];
+    return `${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  }
+  const iso = new Date(raw);
+  return isNaN(iso.getTime()) ? today : iso.toISOString().split("T")[0];
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { receiptData } = body;
+    const { receiptData, userId } = body;
 
     if (!receiptData) {
       return NextResponse.json({ error: "Donnees du ticket manquantes" }, { status: 400 });
     }
+    if (!userId) {
+      return NextResponse.json({ error: "Utilisateur non authentifie" }, { status: 401 });
+    }
 
     const db = getDb();
 
-    const docRef = await addDoc(collection(db, "scanned_transactions"), {
-      merchant:  receiptData.merchant  || "Inconnu",
-      amount:    receiptData.total ? parseFloat(receiptData.total) : 0,
-      date:      receiptData.date      || null,
-      currency:  receiptData.currency  || "EUR",
-      items:     receiptData.items     || [],
-      rawText:   receiptData.rawText   || "",
+    const total = receiptData.total ? parseFloat(String(receiptData.total).replace(",", ".")) : 0;
+
+    // On enregistre dans la MÊME collection que l'import Excel pour
+    // que la transaction apparaisse dans le dashboard.
+    const docRef = await addDoc(collection(db, "transactions"), {
+      userId,
+      label:     receiptData.merchant || "Ticket scanné",
+      amount:    -Math.abs(total),            // dépense → montant négatif
+      date:      normalizeDate(receiptData.date),
       category:  "Alimentation",
       type:      "out",
+      source:    "scan",
+      currency:  receiptData.currency || "EUR",
+      items:     receiptData.items   || [],
       createdAt: serverTimestamp(),
-      scannedAt: new Date().toISOString(),
     });
 
     return NextResponse.json({
