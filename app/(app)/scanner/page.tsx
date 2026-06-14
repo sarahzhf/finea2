@@ -138,8 +138,8 @@ export default function Scanner() {
         {selectedImage && (
           <div className="absolute inset-0 flex items-center justify-center">
             <img src={selectedImage} alt="Ticket"
-              className="max-w-full max-h-full object-contain opacity-30"
-              style={{ filter: "blur(1px)" }} />
+              className="max-w-full max-h-full object-contain"
+              style={{ opacity: isDone ? 0.7 : 0.55 }} />
           </div>
         )}
 
@@ -164,24 +164,24 @@ export default function Scanner() {
           </motion.button>
         </div>
 
-        {/* Viewfinder */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative" style={{ width: 260, height: 180 }}>
+        {/* Viewfinder — grand cadre couvrant toute l'image */}
+        <div className="absolute inset-0 flex items-center justify-center px-5 pt-24 pb-24">
+          <div className="relative w-full h-full" style={{ maxWidth: 420 }}>
 
             {/* Dark corners overlay */}
             <div className="absolute inset-0 pointer-events-none"
-              style={{ boxShadow: "0 0 0 1000px rgba(0,0,0,0.55)", borderRadius: 12 }} />
+              style={{ boxShadow: "0 0 0 1000px rgba(0,0,0,0.45)", borderRadius: 18 }} />
 
             {/* Corner brackets */}
             {[
-              { pos: "top-0 left-0",    border: "border-t-2 border-l-2 rounded-tl-xl" },
-              { pos: "top-0 right-0",   border: "border-t-2 border-r-2 rounded-tr-xl" },
-              { pos: "bottom-0 left-0", border: "border-b-2 border-l-2 rounded-bl-xl" },
-              { pos: "bottom-0 right-0",border: "border-b-2 border-r-2 rounded-br-xl" },
+              { pos: "top-0 left-0",    border: "border-t-2 border-l-2 rounded-tl-2xl" },
+              { pos: "top-0 right-0",   border: "border-t-2 border-r-2 rounded-tr-2xl" },
+              { pos: "bottom-0 left-0", border: "border-b-2 border-l-2 rounded-bl-2xl" },
+              { pos: "bottom-0 right-0",border: "border-b-2 border-r-2 rounded-br-2xl" },
             ].map((c, i) => (
               <motion.div key={i}
                 animate={isDone ? { borderColor: GREEN } : isError ? { borderColor: "#f87171" } : { borderColor: "white" }}
-                className={`absolute w-8 h-8 ${c.pos} ${c.border}`} />
+                className={`absolute w-12 h-12 ${c.pos} ${c.border}`} />
             ))}
 
             {/* Scan line */}
@@ -232,7 +232,7 @@ export default function Scanner() {
             style={{ background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.12)" }}>
             <p className="text-xs text-white/70">
               {scanState === "idle"     && "Importez une photo de ticket de caisse"}
-              {scanState === "scanning" && "Analyse Gemini en cours..."}
+              {scanState === "scanning" && "Analyse IA en cours..."}
               {scanState === "done"     && "Ticket analyse avec succes"}
               {scanState === "error"    && (errorMsg ?? "Erreur lors de l'analyse")}
             </p>

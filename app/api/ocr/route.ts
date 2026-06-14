@@ -1,5 +1,5 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,17 +22,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Aucune image fournie" }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "GEMINI_API_KEY manquante dans .env.local" }, { status: 500 });
+      return NextResponse.json({ error: "OPENAI_API_KEY manquante dans .env.local" }, { status: 500 });
     }
 
     const bytes = await imageFile.arrayBuffer();
     const base64Image = Buffer.from(bytes).toString("base64");
     const mimeType = imageFile.type?.startsWith("image/") ? imageFile.type : "image/jpeg";
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
     const prompt = `Analyse ce ticket de caisse et extrait les informations au format JSON :
 
@@ -52,13 +50,24 @@ Instructions :
 - Liste tous les articles visibles
 - Reponds UNIQUEMENT avec le JSON, sans markdown ni texte autour`;
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { data: base64Image, mimeType } },
-    ]);
+    const openai = new OpenAI({ apiKey });
 
-    const content = result.response.text();
-    if (!content) throw new Error("Pas de reponse de Gemini");
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      max_tokens: 1500,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: dataUrl, detail: "high" } },
+          ],
+        },
+      ],
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) throw new Error("Pas de reponse de l'IA");
 
     let receiptData: ReceiptData;
     try {
@@ -80,14 +89,11 @@ Instructions :
 
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes("API_KEY_INVALID") || msg.includes("API key not valid")) {
-      return NextResponse.json({ error: "Cle API Gemini invalide", details: msg }, { status: 401 });
+    if (msg.includes("Incorrect API key") || msg.includes("invalid_api_key")) {
+      return NextResponse.json({ error: "Cle API OpenAI invalide", details: msg }, { status: 401 });
     }
-    if (msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
-      return NextResponse.json({ error: "Quota Gemini atteint", details: msg }, { status: 429 });
-    }
-    if (msg.includes("PERMISSION_DENIED") || msg.includes("has not been used")) {
-      return NextResponse.json({ error: "API Gemini non activee", details: "Activer Generative Language API sur Google Cloud Console" }, { status: 403 });
+    if (msg.includes("rate_limit") || msg.includes("quota") || msg.includes("insufficient_quota")) {
+      return NextResponse.json({ error: "Quota OpenAI atteint", details: msg }, { status: 429 });
     }
     return NextResponse.json({ error: "Erreur analyse image", details: msg }, { status: 500 });
   }
