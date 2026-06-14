@@ -3,18 +3,19 @@ import OpenAI from "openai"
 import { initializeApp, getApps, getApp } from "firebase/app"
 import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 
-const DEMO_USER = "demo-user"
-
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json()
+    const { messages, userId } = await req.json()
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: "OPENAI_API_KEY manquante" }, { status: 500 })
     }
+    if (!userId) {
+      return NextResponse.json({ error: "Utilisateur non authentifié" }, { status: 401 })
+    }
 
-    const financialContext = await getUserFinancialContext()
+    const financialContext = await getUserFinancialContext(userId)
 
     const systemPrompt = `Tu es Finéa, une coach financière IA bienveillante, professionnelle et directe. Tu aides exclusivement avec les finances personnelles : budget, dépenses, épargne, conseils d'optimisation.
 
@@ -73,13 +74,13 @@ const firebaseConfig = {
 const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 const db = getFirestore(firebaseApp)
 
-async function getUserFinancialContext(): Promise<string> {
+async function getUserFinancialContext(userId: string): Promise<string> {
   try {
-    const metaSnap = await getDoc(doc(db, "account_meta", DEMO_USER))
+    const metaSnap = await getDoc(doc(db, "account_meta", userId))
     const meta = metaSnap.exists() ? metaSnap.data() : null
 
     const txSnap = await getDocs(
-      query(collection(db, "transactions"), where("userId", "==", DEMO_USER))
+      query(collection(db, "transactions"), where("userId", "==", userId))
     )
     const transactions = txSnap.docs
       .map(d => d.data())
@@ -91,7 +92,7 @@ async function getUserFinancialContext(): Promise<string> {
       .slice(0, 80)
 
     const savSnap = await getDocs(
-      query(collection(db, "savings_accounts"), where("userId", "==", DEMO_USER))
+      query(collection(db, "savings_accounts"), where("userId", "==", userId))
     )
     const savings = savSnap.docs.map(d => d.data())
 

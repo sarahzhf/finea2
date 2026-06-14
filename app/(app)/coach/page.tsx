@@ -5,6 +5,7 @@ import { Send, Mic, Sparkles } from "lucide-react"
 import Image from "next/image"
 import FineaAnimated from "@/components/finea-animated"
 import { GOLD, GOLD_DIM, BG_CARD, BORDER } from "@/lib/theme"
+import { useAuth } from "@/components/AuthProvider"
 
 type Msg = { role: "assistant" | "user"; text: string; id: number }
 
@@ -26,6 +27,7 @@ const SUGGESTIONS = [
 let nextId = 10
 
 export default function CoachPage() {
+  const { user } = useAuth()
   const [messages, setMessages] = useState<Msg[]>(INITIAL)
   const [input, setInput]       = useState("")
   const [typing, setTyping]     = useState(false)
@@ -53,6 +55,7 @@ export default function CoachPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: updatedMessages.map(m => ({ role: m.role, text: m.text })),
+          userId: user?.uid ?? "",
         }),
       })
 

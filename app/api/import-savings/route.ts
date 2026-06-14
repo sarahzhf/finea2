@@ -16,7 +16,6 @@ const firebaseConfig = {
 }
 const fireApp = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 const db = getFirestore(fireApp)
-const DEMO_USER = "demo-user"
 
 // ─── Date serial Excel → YYYY-MM-DD ─────────────────────────────────────────
 function excelSerial(serial: number): string {
@@ -148,9 +147,11 @@ function parseSavingsCA(rows: unknown[][]) {
 // ─── Handler ─────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const form = await req.formData()
-    const file = form.get("file") as File | null
-    if (!file) return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 })
+    const form   = await req.formData()
+    const file   = form.get("file")   as File | null
+    const userId = form.get("userId") as string | null
+    if (!file)   return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 })
+    if (!userId) return NextResponse.json({ error: "Utilisateur non authentifié" }, { status: 401 })
 
     const buf = Buffer.from(await file.arrayBuffer())
     const wb  = XLSX.read(buf, { type: "buffer" })
@@ -165,11 +166,11 @@ export async function POST(req: NextRequest) {
 
     const rate    = detectRate(parsed.accountName)
     const ceiling = detectCeiling(parsed.accountName)
-    const accountId = `${DEMO_USER}-${parsed.accountNumber || parsed.accountName.replace(/\s+/g,"-").toLowerCase()}`
+    const accountId = `${userId}-${parsed.accountNumber || parsed.accountName.replace(/\s+/g,"-").toLowerCase()}`
 
     // Upsert du compte dans savings_accounts
     await setDoc(doc(db, "savings_accounts", accountId), {
-      userId:        DEMO_USER,
+      userId,
       accountId,
       name:          parsed.accountName,
       accountNumber: parsed.accountNumber,
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest) {
     // Ajouter les transactions dans savings_transactions
     await Promise.all(parsed.transactions.map(t =>
       addDoc(collection(db, "savings_transactions"), {
-        userId:    DEMO_USER,
+        userId,
         accountId,
         accountName: parsed.accountName,
         label:     t.label,

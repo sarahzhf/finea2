@@ -16,7 +16,6 @@ const firebaseConfig = {
 }
 const fireApp = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 const db = getFirestore(fireApp)
-const DEMO_USER = "demo-user"
 
 // ─── Date : serial Excel → YYYY-MM-DD ───────────────────────────────────────
 // Formule standard : serial 1 = 1900-01-01, avec bug Excel (60 = fausse année bissextile)
@@ -184,7 +183,7 @@ function parseCA(rows: Record<string, unknown>[]) {
     const rawType = rawLabel.split("\n")[0].trim()
 
     transactions.push({
-      userId:   DEMO_USER,
+      userId,
       label,
       amount,
       date,
@@ -227,7 +226,7 @@ function parseGeneric(rows: Record<string, unknown>[]): Record<string, unknown>[
     else if (amountKey) amount = parseAmount(row[amountKey])
     if (!amount) return []
     const label = rawLabel.split("\n")[0].replace(/\s{2,}/g," ").trim()
-    return [{ userId: DEMO_USER, label, amount, date, category: detectCategory(label, ""), type: amount > 0 ? "in" : "out", source: "import", createdAt: serverTimestamp() }]
+    return [{ userId, label, amount, date, category: detectCategory(label, ""), type: amount > 0 ? "in" : "out", source: "import", createdAt: serverTimestamp() }]
   })
 }
 
@@ -235,8 +234,10 @@ function parseGeneric(rows: Record<string, unknown>[]): Record<string, unknown>[
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData()
-    const file = form.get("file") as File | null
-    if (!file) return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 })
+    const file   = form.get("file")   as File | null
+    const userId = form.get("userId") as string | null
+    if (!file)   return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 })
+    if (!userId) return NextResponse.json({ error: "Utilisateur non authentifié" }, { status: 401 })
 
     const buf = Buffer.from(await file.arrayBuffer())
     const wb  = XLSX.read(buf, { type: "buffer" })
@@ -263,8 +264,8 @@ export async function POST(req: NextRequest) {
 
     // Sauvegarder les métadonnées du compte (solde réel, nom, numéro)
     if (meta.solde != null) {
-      await setDoc(doc(db, "account_meta", DEMO_USER), {
-        userId:        DEMO_USER,
+      await setDoc(doc(db, "account_meta", userId), {
+        userId,
         solde:         meta.solde,
         accountName:   meta.accountName  ?? "",
         accountNumber: meta.accountNumber ?? "",

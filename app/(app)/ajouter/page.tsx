@@ -6,12 +6,13 @@ import { ArrowLeft, FileSpreadsheet, WifiOff, CheckCircle, AlertCircle, X, Trash
 import { GOLD, BG_CARD, BORDER } from "@/lib/theme"
 import { db } from "@/lib/firebase"
 import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"
+import { useAuth } from "@/components/AuthProvider"
 
-const DEMO_USER = "demo-user"
 type Status = "idle" | "uploading" | "done" | "error"
 
 export default function Ajouter() {
   const router = useRouter()
+  const { user } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const [status, setStatus]   = useState<Status>("idle")
   const [count, setCount]       = useState(0)
@@ -39,6 +40,7 @@ export default function Ajouter() {
     try {
       const form = new FormData()
       form.append("file", file)
+      form.append("userId", user?.uid ?? "")
       const res = await fetch("/api/import", { method: "POST", body: form })
       clearInterval(interval)
       setProgress(100)
@@ -77,7 +79,7 @@ export default function Ajouter() {
     setCleaning(true)
     setCleanDone(false)
     try {
-      const q = query(collection(db, "transactions"), where("userId", "==", DEMO_USER))
+      const q = query(collection(db, "transactions"), where("userId", "==", user!.uid))
       const snap = await getDocs(q)
       await Promise.all(snap.docs.map(d => deleteDoc(doc(db, "transactions", d.id))))
       setCleanDone(true)

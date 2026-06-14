@@ -7,8 +7,7 @@ import { ArrowLeft, ArrowUpRight, ArrowDownLeft, ChevronDown, Check, Search, X }
 import { GOLD, BG_CARD, BORDER, GREEN, RED } from "@/lib/theme"
 import { db } from "@/lib/firebase"
 import { collection, query, where, getDocs } from "firebase/firestore"
-
-const DEMO_USER = "demo-user"
+import { useAuth } from "@/components/AuthProvider"
 
 interface Transaction {
   id: string; label: string; category: string; amount: number; date: string; type: "in" | "out"
@@ -29,6 +28,7 @@ function formatMonth(ym: string) {
 
 export default function TransactionsPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading]           = useState(true)
   const [selectedMonth, setSelectedMonth] = useState("")
@@ -37,14 +37,15 @@ export default function TransactionsPage() {
   const [filterType, setFilterType]     = useState<"all"|"in"|"out">("all")
 
   useEffect(() => {
+    if (!user) return
     loadTransactions()
     window.addEventListener("transactions-updated", loadTransactions)
     return () => window.removeEventListener("transactions-updated", loadTransactions)
-  }, [])
+  }, [user])
 
   async function loadTransactions() {
     try {
-      const q = query(collection(db, "transactions"), where("userId", "==", DEMO_USER))
+      const q = query(collection(db, "transactions"), where("userId", "==", user!.uid))
       const snap = await getDocs(q)
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as Transaction))
       all.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))

@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Upload, CheckCircle, AlertCircle, X, Loader2, Trash2 } from "lucide-react"
 import { db } from "@/lib/firebase"
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, serverTimestamp, deleteDoc } from "firebase/firestore"
+import { useAuth } from "@/components/AuthProvider"
 
 const GOLD = "#F5D657"
-const DEMO_USER = "demo-user"
 
 interface SavingsEntry   { id?: string; userId: string; date: string; amount: number; note?: string }
 interface SavingsGoal    { id?: string; userId: string; name: string; targetAmount: number; currentAmount: number; emoji: string; color: string; deadline?: string }
@@ -77,6 +77,7 @@ function RingProgress({ percent, color, size = 108, stroke = 7, children }: {
 
 export default function EpargnePage() {
   const router = useRouter()
+  const { user } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const [tab, setTab] = useState<"comptes" | "objectifs" | "historique">("comptes")
 
@@ -127,12 +128,12 @@ export default function EpargnePage() {
   async function loadAccounts() {
     try {
       setAccountsLoading(true)
-      const q = query(collection(db, "savings_accounts"), where("userId", "==", DEMO_USER))
+      const q = query(collection(db, "savings_accounts"), where("userId", "==", user!.uid))
       const snap = await getDocs(q)
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as SavingsAccount))
       setAccounts(all)
 
-      const qt = query(collection(db, "savings_transactions"), where("userId", "==", DEMO_USER))
+      const qt = query(collection(db, "savings_transactions"), where("userId", "==", user!.uid))
       const snTx = await getDocs(qt)
       const txs = snTx.docs.map(d => ({ id: d.id, ...d.data() } as SavingsTx))
       txs.sort((a, b) => b.date.localeCompare(a.date))
@@ -142,7 +143,7 @@ export default function EpargnePage() {
 
   async function loadEntries() {
     try {
-      const q = query(collection(db, "savings_entries"), where("userId", "==", DEMO_USER))
+      const q = query(collection(db, "savings_entries"), where("userId", "==", user!.uid))
       const snap = await getDocs(q)
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as SavingsEntry))
       all.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
@@ -151,7 +152,7 @@ export default function EpargnePage() {
   }
   async function loadGoals() {
     try {
-      const q = query(collection(db, "savings_goals_v2"), where("userId", "==", DEMO_USER))
+      const q = query(collection(db, "savings_goals_v2"), where("userId", "==", user!.uid))
       const snap = await getDocs(q)
       setSavingsGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as SavingsGoal)))
     } catch(e) { console.error(e) }
@@ -166,6 +167,7 @@ export default function EpargnePage() {
     try {
       const form = new FormData()
       form.append("file", file)
+      form.append("userId", user?.uid ?? "")
       const res  = await fetch("/api/import-savings", { method: "POST", body: form })
       const data = await res.json()
       if (!res.ok || !data.success) {
@@ -193,7 +195,7 @@ export default function EpargnePage() {
         if (amount === 0) await deleteDoc(doc(db, "savings_entries", existingEntry.id))
         else await updateDoc(doc(db, "savings_entries", existingEntry.id), { amount, note: modalNote || "" })
       } else if (amount > 0) {
-        await addDoc(collection(db, "savings_entries"), { userId: DEMO_USER, date: selectedDate, amount, note: modalNote || "", createdAt: serverTimestamp() })
+        await addDoc(collection(db, "savings_entries"), { userId: user!.uid, date: selectedDate, amount, note: modalNote || "", createdAt: serverTimestamp() })
       }
       await loadEntries()
       setShowAddModal(false); setModalAmount(""); setModalNote(""); setSelectedDate(""); setExistingEntry(null)
@@ -202,7 +204,7 @@ export default function EpargnePage() {
   async function saveGoal() {
     if (!goalName || !goalTarget) return
     try {
-      const data = { userId: DEMO_USER, name: goalName, emoji: goalEmoji, color: goalColor, targetAmount: parseFloat(goalTarget), currentAmount: parseFloat(goalCurrent)||0, deadline: goalDeadline||null, createdAt: serverTimestamp() }
+      const data = { userId: user!.uid, name: goalName, emoji: goalEmoji, color: goalColor, targetAmount: parseFloat(goalTarget), currentAmount: parseFloat(goalCurrent)||0, deadline: goalDeadline||null, createdAt: serverTimestamp() }
       if (editGoal?.id) await updateDoc(doc(db, "savings_goals_v2", editGoal.id), data)
       else await addDoc(collection(db, "savings_goals_v2"), data)
       await loadGoals(); closeGoalModal()

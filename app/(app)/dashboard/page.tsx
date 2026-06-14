@@ -7,8 +7,7 @@ import { GOLD, GOLD_DIM, BG_CARD, BORDER, GREEN, RED } from "@/lib/theme"
 import { db } from "@/lib/firebase"
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 import ProfileMenu from "@/components/profile-menu"
-
-const DEMO_USER = "demo-user"
+import { useAuth } from "@/components/AuthProvider"
 
 const BUBBLE_ITEMS = [
   { emoji: "🏦", label: "Épargne",       route: "/epargne"      },
@@ -41,6 +40,7 @@ function formatMonth(ym: string) {
 
 export default function Dashboard() {
   const router = useRouter()
+  const { user } = useAuth()
   const [bubbleOpen, setBubbleOpen]   = useState(false)
   const [monthOpen, setMonthOpen]     = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [accountNumber, setAccountNumber]   = useState("")
 
   useEffect(() => {
+    if (!user) return
     loadAll()
     const onFocus  = () => loadAll()
     const onImport = () => loadAll()
@@ -62,7 +63,7 @@ export default function Dashboard() {
       window.removeEventListener("focus", onFocus)
       window.removeEventListener("transactions-updated", onImport)
     }
-  }, [])
+  }, [user])
 
   async function loadAll() {
     await Promise.all([loadTransactions(), loadAccountMeta()])
@@ -70,7 +71,7 @@ export default function Dashboard() {
 
   async function loadAccountMeta() {
     try {
-      const snap = await getDoc(doc(db, "account_meta", DEMO_USER))
+      const snap = await getDoc(doc(db, "account_meta", user!.uid))
       if (snap.exists()) {
         const d = snap.data()
         if (d.solde         != null) setRealSolde(d.solde)
@@ -84,7 +85,7 @@ export default function Dashboard() {
 
   async function loadTransactions() {
     try {
-      const q = query(collection(db, "transactions"), where("userId", "==", DEMO_USER))
+      const q = query(collection(db, "transactions"), where("userId", "==", user!.uid))
       const snap = await getDocs(q)
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as Transaction))
       all.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
