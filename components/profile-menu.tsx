@@ -273,8 +273,8 @@ export default function ProfileMenu({ open, onClose, accountName, accountNumber,
                       </p>
                     </div>
 
-                    <ActionButton label="Modifier mes informations" icon={<Settings size={14} />} />
-                    <ActionButton label="Changer mon email"         icon={<Key size={14} />} />
+                    <ActionButton label="Modifier mon nom" icon={<Settings size={14} />}
+                      onClick={() => { setDraftName(displayName); setEditingName(true) }} />
                     <ActionButton label="Changer mon mot de passe"  icon={<Lock size={14} />} />
                   </div>
                 </motion.div>
@@ -502,9 +502,9 @@ function InfoCard({ label, value, masked }: { label: string; value: string; mask
   )
 }
 
-function ActionButton({ label, icon, danger }: { label: string; icon: React.ReactNode; danger?: boolean }) {
+function ActionButton({ label, icon, danger, onClick }: { label: string; icon: React.ReactNode; danger?: boolean; onClick?: () => void }) {
   return (
-    <button className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all active:scale-[0.98]"
+    <button onClick={onClick} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all active:scale-[0.98]"
       style={{
         background: danger ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.04)",
         border: `1px solid ${danger ? "rgba(239,68,68,0.2)" : BORDER}`,
