@@ -118,7 +118,7 @@ function detectCAFormat(rows: Record<string, unknown>[]): boolean {
 }
 
 // ─── Parser Crédit Agricole ──────────────────────────────────────────────────
-function parseCA(rows: Record<string, unknown>[]) {
+function parseCA(rows: Record<string, unknown>[], userId: string) {
   // Lignes de métadonnées
   const accountName   = String(Object.values(rows[0] ?? {})[0] ?? "").trim()
   const accountNumber = String(Object.values(rows[1] ?? {})[0] ?? "").replace(/compte de d.p.t n[°o]/i,"").trim()
@@ -198,7 +198,7 @@ function parseCA(rows: Record<string, unknown>[]) {
 }
 
 // ─── Parser générique ────────────────────────────────────────────────────────
-function parseGeneric(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+function parseGeneric(rows: Record<string, unknown>[], userId: string): Record<string, unknown>[] {
   if (!rows.length) return []
   const headers = Object.keys(rows[0])
 
@@ -250,11 +250,11 @@ export async function POST(req: NextRequest) {
     let meta: Record<string, unknown> = {}
 
     if (detectCAFormat(rows)) {
-      const parsed = parseCA(rows)
+      const parsed = parseCA(rows, userId)
       transactions = parsed.transactions
       meta = { accountName: parsed.accountName, accountNumber: parsed.accountNumber, solde: parsed.solde }
     } else {
-      transactions = parseGeneric(rows)
+      transactions = parseGeneric(rows, userId)
     }
 
     if (!transactions.length)
