@@ -31,12 +31,21 @@ interface Collected {
 }
 
 // ——— Game config ———
+<<<<<<< HEAD
 const TICK_MS = 55
 const ITEM_SPEED = 0.95
 const PLAYER_Y = 80
 const HIT_ZONE = 9
 const TOTAL_SPAWNS = 22
 const SPAWN_EVERY = 12
+=======
+const TICK_MS = 48
+const ITEM_SPEED = 1.55
+const PLAYER_Y = 80
+const HIT_ZONE = 9
+const TOTAL_SPAWNS = 22
+const SPAWN_EVERY = 9
+>>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
 
 const LANE_FAR = [37, 50, 63]
 const LANE_NEAR = [16, 50, 84]

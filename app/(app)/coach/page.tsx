@@ -94,7 +94,11 @@ export default function CoachPage() {
               <p className="text-base font-bold text-white">Finéa Coach</p>
               <Sparkles size={13} color={GOLD} />
             </div>
+<<<<<<< HEAD
             <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.38)" }}>Coach IA · Données personnalisées</p>
+=======
+            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.38)" }}>Coach IA · Gemini · Données personnalisées</p>
+>>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
           </div>
         </motion.div>
       </div>

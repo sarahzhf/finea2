@@ -150,12 +150,15 @@ export default function Cerveau() {
             Go
           </motion.button>
         </div>
+<<<<<<< HEAD
         <button onClick={() => router.push("/defis")}
           className="w-full mt-3 pt-3 text-[10px] font-semibold text-left flex items-center justify-between"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)", color: GOLD }}>
           <span>🏆 Voir mon score & tous mes défis</span>
           <ChevronRight size={13} />
         </button>
+=======
+>>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
       </motion.div>
     </div>
   )

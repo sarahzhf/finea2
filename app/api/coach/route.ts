@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
 
     const financialContext = await getUserFinancialContext(userId)
 
+<<<<<<< HEAD
     const systemPrompt = `Tu es Finéa, une coach financière IA bienveillante, claire et directe. Tu aides exclusivement avec les finances personnelles : budget, dépenses, épargne, optimisation.
 
 STYLE DE RÉPONSE (important) :
@@ -42,6 +43,32 @@ ${financialContext}`
         role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
         content: m.text,
       })),
+=======
+    const systemPrompt = `Tu es Finéa, une coach financière IA bienveillante, professionnelle et directe. Tu aides exclusivement avec les finances personnelles : budget, dépenses, épargne, conseils d'optimisation.
+
+RÈGLES STRICTES :
+- Tu réponds UNIQUEMENT aux questions liées aux finances personnelles, budgets, épargne, dépenses, revenus, gestion d'argent.
+- Si la question est hors sujet, réponds : "Je ne suis pas là pour ça 😊 Mon rôle est de t'aider à comprendre tes finances et optimiser ton budget. Tu as une question financière ?"
+- Tu tutoies l'utilisateur de façon chaleureuse.
+- Tes réponses sont concises et basées sur les vraies données si disponibles.
+- Tu ne dois PAS inventer de chiffres absents des données.
+- Quand tu identifies des dépenses optimisables, cite les catégories et montants réels.
+- Tu réponds en français.
+- Tes réponses font 3-8 phrases, complètes, jamais coupées au milieu.
+
+${financialContext}`
+
+    // Construire l'historique OpenAI
+    const openaiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      // Inclure tout l'historique sauf le dernier (qu'on envoie séparément)
+      ...messages.slice(0, -1).map((m: { role: string; text: string }) => ({
+        role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
+        content: m.text,
+      })),
+      // Dernier message utilisateur
+      { role: "user", content: messages[messages.length - 1].text },
+>>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
     ]
 
     const openai = new OpenAI({ apiKey })
@@ -49,8 +76,13 @@ ${financialContext}`
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: openaiMessages,
+<<<<<<< HEAD
       temperature: 0.6,
       max_tokens: 320,
+=======
+      temperature: 0.7,
+      max_tokens: 600,
+>>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
     })
 
     const text = completion.choices[0]?.message?.content ?? "Désolée, je n'ai pas pu générer une réponse."
