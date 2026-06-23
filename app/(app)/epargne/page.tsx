@@ -119,7 +119,6 @@ export default function EpargnePage() {
   const simResult   = useMemo(() => { const r = simRate/100/12; const n = simYears*12; if(r===0) return simAmount*n; return simAmount*((Math.pow(1+r,n)-1)/r)*(1+r) }, [simAmount,simRate,simYears])
   const simInterest = simResult - simAmount * simYears * 12
 
-<<<<<<< HEAD
   // ⚠️ Doit dépendre de `user` : sinon, quand un autre utilisateur se connecte
   // (sans rechargement complet de la page), les données du compte précédent
   // restent affichées. On réinitialise aussi l'état avant de recharger.
@@ -133,11 +132,6 @@ export default function EpargnePage() {
 
   async function loadAll() {
     if (!user) return
-=======
-  useEffect(() => { loadAll() }, [])
-
-  async function loadAll() {
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
     await Promise.all([loadAccounts(), loadEntries(), loadGoals()])
   }
 

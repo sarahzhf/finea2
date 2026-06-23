@@ -8,10 +8,7 @@ import { db } from "@/lib/firebase"
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore"
 import ProfileMenu from "@/components/profile-menu"
 import { useAuth } from "@/components/AuthProvider"
-<<<<<<< HEAD
 import { fetchUserStats, UserStats } from "@/lib/finea-stats"
-=======
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
 
 const BUBBLE_ITEMS = [
   { emoji: "🏦", label: "Épargne",       route: "/epargne"      },
@@ -45,11 +42,7 @@ function formatMonth(ym: string) {
 export default function Dashboard() {
   const router = useRouter()
   const { user } = useAuth()
-<<<<<<< HEAD
   const displayName = (user?.displayName || user?.email?.split("@")[0] || "toi").replace(/[._-]+/g, " ").replace(/\s+/g, " ").trim()
-=======
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "toi"
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
   const firstName   = displayName.split(" ")[0]
   const initials    = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
   const [bubbleOpen, setBubbleOpen]   = useState(false)
@@ -62,7 +55,6 @@ export default function Dashboard() {
   const [realSolde, setRealSolde]           = useState<number | null>(null)
   const [accountName, setAccountName]       = useState("")
   const [accountNumber, setAccountNumber]   = useState("")
-<<<<<<< HEAD
   // Score de suivi + défis (par utilisateur)
   const [stats, setStats]       = useState<UserStats | null>(null)
   const [claimable, setClaimable] = useState(0)
@@ -73,11 +65,6 @@ export default function Dashboard() {
       setStats(null); setClaimable(0)
       return
     }
-=======
-
-  useEffect(() => {
-    if (!user) return
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
     loadAll()
     const onFocus  = () => loadAll()
     const onImport = () => loadAll()
@@ -90,7 +77,6 @@ export default function Dashboard() {
   }, [user])
 
   async function loadAll() {
-<<<<<<< HEAD
     if (!user) return
     await Promise.all([loadTransactions(), loadAccountMeta(), loadStats()])
   }
@@ -107,9 +93,6 @@ export default function Dashboard() {
     } catch (e) {
       console.error("stats error:", e)
     }
-=======
-    await Promise.all([loadTransactions(), loadAccountMeta()])
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
   }
 
   async function loadAccountMeta() {
@@ -199,7 +182,6 @@ export default function Dashboard() {
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.38)" }}>Tableau de bord</p>
           </div>
         </motion.div>
-<<<<<<< HEAD
         <motion.button whileTap={{ scale: 0.88 }} onClick={() => router.push("/defis")}
           className="relative w-9 h-9 rounded-xl flex items-center justify-center"
           style={{ background: BG_CARD, border: `1px solid ${BORDER}` }}>
@@ -212,12 +194,6 @@ export default function Dashboard() {
               {claimable}
             </motion.span>
           )}
-=======
-        <motion.button whileTap={{ scale: 0.88 }}
-          className="relative w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: BG_CARD, border: `1px solid ${BORDER}` }}>
-          <Bell size={17} color="rgba(255,255,255,0.6)" />
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
         </motion.button>
       </div>
 
@@ -333,7 +309,6 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-<<<<<<< HEAD
       {/* Score de suivi (par utilisateur) */}
       {stats && (
         <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
@@ -362,8 +337,6 @@ export default function Dashboard() {
         </motion.button>
       )}
 
-=======
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
       {/* Quick actions */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="grid grid-cols-4 gap-3 mb-6">

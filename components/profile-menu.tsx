@@ -54,11 +54,7 @@ export default function ProfileMenu({ open, onClose, accountName, accountNumber,
   const [draftName, setDraftName]   = useState("")
   const [savingName, setSavingName] = useState(false)
 
-<<<<<<< HEAD
   const displayName = (nameValue || user?.displayName || user?.email?.split("@")[0] || "Utilisateur").replace(/[._-]+/g, " ").replace(/\s+/g, " ").trim()
-=======
-  const displayName = nameValue || user?.displayName || user?.email?.split("@")[0] || "Utilisateur"
->>>>>>> c2ce98782d34bda170bcf3571c6142480a36998b
   const email       = user?.email || ""
   const initials    = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
 
